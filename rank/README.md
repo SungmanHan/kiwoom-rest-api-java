@@ -155,3 +155,118 @@ if (raw.endsWith("_AL") || raw.endsWith("_NX")) raw = raw.substring(0, raw.lengt
 ```
 
 이걸 빼먹으면 **예외 없이 조용히 Map lookup이 전부 실패**합니다. 순위 데이터가 통째로 안 붙는데 에러는 안 납니다.
+
+---
+
+## 실제 응답 예시
+
+### ka10030 — 거래대금 상위 (`stex_tp=3`)
+
+```jsonc
+{
+  "tdy_trde_qty_upper": [            // ← 100행
+    {
+      "stk_cd": "005930_AL",         // ← 통합 호출이라 접미사가 붙었다
+      "stk_nm": "삼성전자",
+      "cur_prc": "-222500",          // 부호 = 등락 방향
+      "pred_pre": "-3500", "pred_pre_sig": "5", "flu_rt": "-1.55",
+      "trde_qty": "37415765",
+      "pred_rt": "+100.00",          // 전일 거래량 대비
+      "trde_tern_rt": "+0.64",       // 회전율
+      "trde_amt": "8419636",         // ← 백만원 → 8.4조원
+
+      "opmr_trde_qty": "",           // 장중  ┐
+      "af_mkrt_trde_qty": "",        // 시간외 ├ 조건 안 맞으면 빈 문자열
+      "bf_mkrt_trde_qty": ""         // 장전   ┘
+    }
+  ],
+  "return_code": 0
+}
+```
+
+`opmr_*` / `af_mkrt_*` / `bf_mkrt_*` 는 `mrkt_open_tp` 설정에 따라 **빈 문자열**로 옵니다. 0이 아니라 빈 문자열이므로 숫자 파서에 그대로 넣으면 터집니다.
+
+### ka10032 — 거래대금 상위 (순위 변동 포함)
+
+```jsonc
+{
+  "trde_prica_upper": [              // ← 100행
+    {
+      "stk_cd": "005930_AL", "stk_nm": "삼성전자",
+      "now_rank": "1",               // ← 현재 순위
+      "pred_rank": "1",              // ← 전일 순위 (delta = pred - now)
+      "cur_prc": "-222500", "flu_rt": "-1.55",
+      "sel_bid": "-222500", "buy_bid": "-222000",
+      "now_trde_qty": "37415765",
+      "pred_trde_qty": "37762572",
+      "trde_prica": "8419636"        // 백만원
+    }
+  ],
+  "return_code": 0
+}
+```
+
+ka10030과 값이 겹치지만 **`now_rank`/`pred_rank`는 여기에만** 있습니다.
+
+### ka10034 — 외인 기간별 매매 상위
+
+```jsonc
+{
+  "for_dt_trde_upper": [             // ← 100행
+    {
+      "rank": "1",
+      "stk_cd": "252670_AL", "stk_nm": "KODEX 200선물인버스2X",
+      "cur_prc": "+169", "pred_pre": "+3",
+      "trde_qty": "3672903674",
+      "netprps_qty": "+75241246",    // ← 순매수 수량(주). 금액 아님
+      "gain_pos_stkcnt": "6495998613"
+    }
+  ],
+  "return_code": 0
+}
+```
+
+ETF가 상위를 점유하는 경우가 많습니다. 개별 종목만 필요하면 **필터링이 필요**합니다.
+
+### ka10016 — 신고가 (`dt=250`)
+
+```jsonc
+{
+  "ntl_pric": [                      // ← 100행
+    {
+      "stk_cd": "000150_AL", "stk_nm": "두산",
+      "cur_prc": "+1595000", "pred_pre": "+23000", "flu_rt": "+1.46",
+      "trde_qty": "157643",
+      "pred_trde_qty_pre_rt": "+208.13",
+      "sel_bid": "+1595000", "buy_bid": "+1593000",
+      "high_pric": "1682000",        // 기간 최고
+      "low_pric": "281500"           // 기간 최저
+    }
+  ],
+  "return_code": 0
+}
+```
+
+### ka00198 — 관심순위 (`qry_tp=1`, 2026-07-26 21:03)
+
+```jsonc
+{
+  "item_inq_rank": [                 // ← 20행 고정
+    {
+      "bigd_rank": "1",
+      "stk_cd": "000660",            // ← 이 TR만 접미사가 없다
+      "stk_nm": "SK하이닉스",
+      "rank_chg": "0",               // 순위 변동 (부호가 값에 포함)
+      "rank_chg_sign": "",           // ← 항상 비어 있다. 쓰지 말 것
+      "past_curr_prc": "-1781000",
+      "base_comp_chgr": "-7.19", "base_comp_sign": "5",
+      "prev_base_chgr": "0.00", "prev_base_sign": "3",
+      "dt": "20260726",
+      "tm": "210300"                 // ← 응답 시각. 동결 구간 판별에 필수
+    }
+  ],
+  "return_code": 0
+}
+```
+
+`tm`이 **동일한 값으로 여러 번** 나오는 동결 구간이 있습니다. 두 응답을 비교할 땐 `tm`이 다른지 먼저 확인하세요 — 같은 `tm`끼리 비교하면 "값이 안 변한다"는 잘못된 결론이 납니다.

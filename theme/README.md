@@ -79,3 +79,55 @@ Map.of("date_tp","1", "thema_grp_cd", themeCode, "stex_tp", stexTp)
 ```java
 "KRX".equals(settings.getString("nt2.theme.exchange", "SOR")) ? "1" : "3"
 ```
+
+---
+
+## 실제 응답 예시
+
+### ka90001 — 테마 목록 (`date_tp=1`)
+
+```jsonc
+{
+  "thema_grp": [                     // ← 100행
+    {
+      "thema_grp_cd": "452",         // ← ka90002 입력값
+      "thema_nm": "SNS(Social Network Service)",
+      "stk_num": "3",                // 편입 종목 수
+      "rising_stk_num": "1",         // 상승 종목 수 → 상승비율 1/3
+      "fall_stk_num": "2",
+      "flu_rt": "+1.01", "flu_sig": "2",
+      "dt_prft_rt": "+1.01",         // 기간 수익률
+      "main_stk": "NAVER, 카카오"     // ← 콤마 구분 문자열. 배열이 아님
+    }
+  ],
+  "return_code": 0
+}
+```
+
+`main_stk`는 **종목명 콤마 나열 문자열**입니다. 종목코드가 아니라 이름이라 코드 매핑에 바로 못 씁니다.
+
+### ka90002 — 구성종목 (`thema_grp_cd=215`)
+
+```jsonc
+{
+  "flu_rt": "-1.01",                 // ← 테마 전체 등락률 (root 직속)
+  "dt_prft_rt": "-3.91",
+  "thema_comp_stk": [                // ← 8행
+    {
+      "stk_cd": "001740", "stk_nm": "SK네트웍스",
+      "cur_prc": "+14170",
+      "pred_pre": "+3270",
+      "flu_rt": "+30.00",            // ← 상한가
+      "acc_trde_qty": "56474937",
+      "sel_bid": "0", "sel_req": "0",   // ← 상한가라 매도호가가 0
+      "buy_bid": "+14170", "buy_req": "1266518",
+      "dt_prft_rt_n": "+8.92"
+    }
+  ],
+  "return_code": 0
+}
+```
+
+**거래대금 필드가 없습니다** → `cur_prc × acc_trde_qty` 로 환산해야 합니다 (위 종목은 약 8,003억).
+
+상한가 종목은 `sel_bid`/`sel_req`가 **0**입니다. 매도벽 계산에서 0으로 나누지 않게 가드하세요.

@@ -4,7 +4,7 @@
 
 공식 스펙 문서를 옮겨 적은 게 아니라, **"실제로 어떤 파라미터를 넣어야 응답이 오고, 응답을 어떻게 파싱해야 안 깨지는지"** 를 코드로 남겼습니다. 공식 문서에 안 적혀 있거나, 적혀 있는 것과 실제 동작이 달랐던 부분은 주석에 실측 날짜와 함께 표시돼 있습니다.
 
-> **공식 스펙은 이 저장소에 없습니다.** TR별 요청/응답 Element 전체 명세는 키움증권이 제공하는 [공식 REST API 문서](https://openapi.kiwoom.com)를 보세요. 여기 있는 건 그 문서를 읽고 구현한 뒤 **깨져 가며 알게 된 것들**입니다.
+> **공식 스펙은 [`spec/`](spec/) 에 있습니다** — 338개 TR 기계판독 JSON + 공식 PDF. 저작권은 키움증권에 있고, 최신본은 [공식 API 가이드](https://openapi.kiwoom.com/guide/apiguide)에서 확인하세요. 나머지 폴더는 그 스펙을 읽고 구현한 뒤 **깨져 가며 알게 된 것들**입니다.
 
 ---
 
@@ -21,6 +21,8 @@
 
 | 폴더 | 대상 | 주요 TR |
 |---|---|---|
+| [`spec/`](spec/) | **키움 공식 스펙** — 338 TR JSON + PDF (저작권: 키움증권) | 전체 |
+| [`docs/PITFALLS.md`](docs/PITFALLS.md) | 함정 전체 목록 (실측 날짜 포함) | — |
 | [`core/`](core/) | 인증·라우팅·Rate Limit·숫자 파싱 — **먼저 읽을 것** | OAuth2 (`/oauth2/token`) |
 | [`account/`](account/) | 계좌 조회 (잔고·예수금·평가·기간손익) | kt00018 · kt00001 · kt00004 · kt00017 · kt00016 · ka10076 · ka10077 |
 | [`order/`](order/) | 주문 발주·정정·취소·체결확인 | kt10000 · kt10001 · kt10002 · kt10003 · kt00007 · ka10075 |
@@ -113,6 +115,98 @@ params.put("trde_qty_tp", "0");   params.put("min_trde_qty", "0");   params.put(
 params.put("trde_prica_tp", "0"); params.put("min_trde_prica", "0"); params.put("max_trde_prica", "0");
 params.put("stex_tp", resolveStexTp());
 ```
+
+---
+
+## 실제 응답은 이렇게 생겼습니다
+
+아래는 **운영 중 실제로 받은 응답**입니다(공개 시장 데이터). 위 함정들이 한눈에 보입니다.
+
+### 함정 1·3 — `--` 음수 표기 + `_AL` 접미사
+
+`ka10063` 장중 투자자별 매매 (외국인, 2026-07-10 14:49):
+
+```jsonc
+{
+  "opmr_invsr_trde": [
+    {
+      "stk_cd": "900110", "stk_nm": "딥커머스",
+      "cur_prc": "+1185", "flu_rt": "+1.20",
+      "netprps_amt": "+2",
+      "sell_amt":    "--7",        // ← dash 2개 = -7. parseLong 하면 예외
+      "sell_qty":    "--6000",     // ← -6000
+      "netprps_qty": "+2000"
+    }
+    // ... 800행
+  ],
+  "return_code": 0,
+  "return_msg": "정상적으로 처리되었습니다"
+}
+```
+
+`ka10030` 거래대금 상위 — 같은 삼성전자인데 **코드가 `005930_AL`** 입니다:
+
+```jsonc
+{
+  "tdy_trde_qty_upper": [
+    {
+      "stk_cd": "005930_AL",       // ← stex_tp=3 으로 요청해서 접미사가 붙었다
+      "stk_nm": "삼성전자",
+      "cur_prc": "-222500",        // ← 가격의 부호는 등락 방향. 절대값을 쓸 것
+      "flu_rt": "-1.55",
+      "trde_qty": "37415765",
+      "trde_amt": "8419636",       // ← 백만원 = 8.4조원
+      "trde_tern_rt": "+0.64",
+      "opmr_trde_qty": "",         // ← 장중 전용 필드는 빈 문자열로 온다
+      "af_mkrt_trde_qty": ""
+    }
+    // ... 100행
+  ],
+  "return_code": 0
+}
+```
+
+### 함정 6 — `return_code=0` 인데 내용이 비어 있다
+
+`ka90004` 종목별 프로그램매매를 **장 마감 전 당일**로 조회한 실제 응답:
+
+```jsonc
+{
+  "tot_1": "", "tot_2": "", "tot_3": "",
+  "stk_prm_trde_prst": [
+    {
+      "stk_cd": "", "stk_nm": "", "cur_prc": "",
+      "netprps_prica": "", "all_trde_rt": ""    // ← 전 필드가 빈 문자열
+    }
+  ],
+  "return_code": 0,                              // ← 성공이다
+  "return_msg": "정상적으로 처리되었습니다"
+}
+```
+
+배열 길이는 0이 아니므로 `isEmpty()` 로는 못 잡습니다. 첫 행 `stk_cd`가 공란인지 봐야 합니다.
+
+### 함정 7 — `ka10100`은 응답 전체가 camelCase
+
+다른 TR이 전부 snake_case인데 이 TR만 다릅니다:
+
+```jsonc
+{
+  "code": "005930", "name": "삼성전자",
+  "listCount": "0000005846278608",   // ← 좌측 0 패딩
+  "auditInfo": "정상",
+  "regDay": "19750611",
+  "lastPrice": "00270000",           // ← 여기도 0 패딩
+  "state": "증거금30%|담보대출|신용가능",
+  "marketName": "거래소", "upName": "전기/전자", "upSizeName": "대형주",
+  "nxtEnable": "Y",                  // ← NXT 상장 여부
+  "return_code": 0
+}
+```
+
+`return_code` / `return_msg` **만** snake_case입니다. 공통 필드라서 그렇습니다.
+
+폴더별 README에 TR별 응답 예시가 더 있습니다.
 
 ---
 

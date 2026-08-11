@@ -170,3 +170,46 @@ Boolean isNxtEnabled(String code) {
 상세는 [`quote/README.md`](../quote/README.md#ka10001--기본정보--현재가) 참고. 이 폴더에는 시총·52주·외인소진률만 쓰는 경량 버전이 있습니다.
 
 단위 주의: `mac`(시총) = **억원**, `dstr_stk`(유통주식수) = **천주**.
+
+---
+
+## 실제 응답 예시
+
+### ka10100 — 종목정보 (삼성전자, 2026-07-25)
+
+**응답 전체가 camelCase**입니다. `return_code`/`return_msg`만 공통 필드라 snake_case입니다.
+
+```jsonc
+{
+  "code": "005930",
+  "name": "삼성전자",
+  "listCount": "0000005846278608",   // ← 좌측 0 패딩 16자리. 그대로 parseLong 하면 값은 맞지만 문자열 비교는 깨진다
+  "auditInfo": "정상",               // 감리 상태
+  "regDay": "19750611",              // 상장일
+  "lastPrice": "00270000",           // ← 여기도 0 패딩
+  "state": "증거금30%|담보대출|신용가능",  // ← 파이프 구분 문자열
+  "marketCode": "0", "marketName": "거래소",
+  "upName": "전기/전자", "upSizeName": "대형주",
+  "companyClassName": "",
+  "orderWarning": "0",               // 투자주의 등
+  "nxtEnable": "Y",                  // ★ NXT 상장 여부
+  "kind": "A",
+  "return_code": 0,
+  "return_msg": "정상적으로 처리되었습니다"
+}
+```
+
+**실측 대조 (2026-07-25)**
+
+| 종목 | `nxtEnable` |
+|---|---|
+| 삼성전자 (005930) | `"Y"` |
+| 현대힘스 (460930) | `"Y"` |
+| 흥구석유 (024060) | `"N"` |
+
+`state`는 `|` 구분 문자열이라 증거금률·신용가능 여부를 파싱하려면 split이 필요합니다.
+`marketName`("거래소"/"코스닥")과 `marketCode`("0"/"10")가 둘 다 오니 코드 쪽을 쓰세요.
+
+### ka10046 참고 — 체결강도
+
+상세 예시는 [`quote/README.md`](../quote/README.md#ka10046--체결강도-삼성전자)에 있습니다.

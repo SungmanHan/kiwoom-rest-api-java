@@ -173,3 +173,161 @@ inds.equals(code) || inds.startsWith(code + "_")
 ### All-or-nothing 정책
 
 KOSPI 또는 KOSDAQ 중 하나만 실패했을 때 나머지로 "시장 전체"를 만들면 **틀린 숫자에 맞는 라벨**이 붙습니다. 둘 다 성공했을 때만 반환하고, 아니면 통째로 생략하세요.
+
+---
+
+## 실제 응답 예시
+
+운영 중 실제로 받은 응답입니다 (공개 시장 데이터). 축약했지만 **필드명·값 형식은 원본 그대로**입니다.
+
+### ka10001 — 삼성전자 (2026-05-06 10:13)
+
+```jsonc
+{
+  "stk_cd": "005930", "stk_nm": "삼성전자",
+  "cur_prc":   "+259500",     // ← 부호는 등락 방향. 가격은 절대값을 쓸 것
+  "base_pric": "232500",      // ← 전일 종가 (부호 없음)
+  "open_pric": "+254000", "high_pric": "+261500", "low_pric": "+251000",
+  "upl_pric":  "+302000",     // 상한가
+  "lst_pric":  "-163000",     // 하한가 (부호가 -로 온다)
+  "pred_pre": "+27000", "pre_sig": "2", "flu_rt": "+11.61",
+  "trde_qty": "21257584", "trde_pre": "-64.57",
+
+  "250hgst": "+261500", "250hgst_pric_dt": "20260506", "250hgst_pric_pre_rt": "-0.76",
+  "250lwst":  "-53700", "250lwst_pric_dt": "20250526", "250lwst_pric_pre_rt": "+383.24",
+
+  "mac": "15171093",          // 시가총액 — 억원 → ×1e8 = 1,517조
+  "flo_stk": "5846279",       // 상장주식수 — 천주
+  "dstr_stk": "4441577",      // 유통주식수 — 천주 → ×1000
+  "dstr_rt": "76.0",
+  "for_exh_rt": "+49.37",     // 외국인 소진률
+
+  "per": "39.54", "pbr": "4.06", "roe": "10.9", "eps": "6564", "bps": "63976",
+  "cap": "7780", "fav": "100", "fav_unit": "원", "setl_mm": "12",
+  "return_code": 0, "return_msg": "정상적으로 처리되었습니다"
+}
+```
+
+`oyr_hgst`/`oyr_lwst`(연중 최고/최저)와 `250hgst`/`250lwst`(250일)는 **다른 필드**입니다. 52주 신고가를 원하면 `250*` 쪽입니다.
+
+### ka10004 — 호가 (삼성전자, 2026-05-06 10:13)
+
+**LIST가 없는 root 직속 71개 필드**입니다.
+
+```jsonc
+{
+  "bid_req_base_tm": "101339",       // 기준시각 HHmmss
+
+  "sel_fpr_bid": "+259500",          // 매도 1차 호가
+  "sel_fpr_req": "100124",           //          잔량
+  "sel_2th_pre_bid": "+260000",      // 매도 2차 — 키 패턴이 1차와 다르다
+  "sel_2th_pre_req": "28646",
+  "sel_2th_pre_req_pre": "+3",       // 직전 대비 증감
+
+  "buy_fpr_bid": "+259000",          // 매수 1차
+  "buy_fpr_req": "66904",
+  "buy_2th_pre_bid": "+258500",
+  "buy_2th_pre_req": "83724",
+
+  "tot_sel_req": "947512",           // 총 매도잔량
+  "tot_buy_req": "490989",           // 총 매수잔량
+  "tot_sel_req_jub_pre": "--47",     // ← 여기도 dash 2개 음수
+
+  "ovt_sel_req": "0",                // 시간외 — 정규장엔 0
+  "ovt_buy_req": "0",                //   저녁엔 tot_* 가 0이고 여기에 값이 온다
+  "return_code": 0
+}
+```
+
+10단까지 있으므로 `sel_10th_pre_bid` 까지 존재합니다.
+
+### ka10046 — 체결강도 (삼성전자)
+
+```jsonc
+{
+  "cntr_str_tm": [                   // ← 60행, 최신 → 과거
+    {
+      "cntr_tm": "101700",           // 시각
+      "cur_prc": "+260000", "flu_rt": "+11.83",
+      "trde_qty": "49571",
+      "acc_trde_prica": "5557461", "acc_trde_qty": "21651592",
+      "cntr_str":       "146.41",    // 현재 체결강도 (100 기준)
+      "cntr_str_5min":  "146.69",
+      "cntr_str_20min": "150.26",
+      "cntr_str_60min": "148.97",
+      "stex_tp": "KRX"
+    }
+  ],
+  "return_code": 0
+}
+```
+
+`cntr_str_5min` / `_20min` / `_60min` 이 **응답에 이미 들어 있습니다.** 직접 이동평균을 낼 필요가 없습니다.
+시각 필드는 `cntr_tm`인데, 코드에 따라 `trd_tm`으로 관측되는 경우가 있어 존재 확인 후 쓰세요.
+
+### ka10063 — 장중 투자자별 (외국인, mrkt_tp=000)
+
+```jsonc
+{
+  "opmr_invsr_trde": [               // ← 800행
+    {
+      "stk_cd": "900110", "stk_nm": "딥커머스",
+      "cur_prc": "+1185", "flu_rt": "+1.20", "acc_trde_qty": "15970",
+
+      "netprps_amt": "+2",           // 순매수 금액
+      "netprps_qty": "+2000",        // 순매수 수량 (amt_qty_tp=2 일 때 이걸 씀)
+      "buy_amt": "+9",  "buy_qty": "+8000",
+      "sell_amt": "--7",             // ← -7
+      "sell_qty": "--6000",          // ← -6000
+      "netprps_amt_irds": "+1",      // 직전 대비 증감
+      "prev_netprps_amt": "+1"
+    }
+  ],
+  "return_code": 0
+}
+```
+
+### ka10065 — 장중 투자자별 상위 (외국인)
+
+```jsonc
+{
+  "opmr_invsr_trde_upper": [         // ← 100행
+    { "stk_cd": "000660", "stk_nm": "SK하이닉스",
+      "sel_qty": "-401450", "buy_qty": "+737424",
+      "netslmt": "+335974" }         // ← netprps_* 가 아니라 netslmt
+  ],
+  "return_code": 0
+}
+```
+
+이 TR의 `stk_cd`에는 **접미사가 없습니다**(`stex_tp=1`로 호출). `stex_tp=3`으로 바꾸면 붙습니다.
+
+### ka10051 — 시장 전체 투자자 순매수 (KOSPI)
+
+```jsonc
+{
+  "inds_netprps": [                  // ← 28행 = 종합 1 + 업종 27
+    {
+      "inds_cd": "001",              // ← 종합(KOSPI). stex_tp=3 이면 "001_AL"
+      "inds_nm": "종합(KOSPI)",
+      "cur_prc": "+838696", "pred_pre": "+33945", "flu_rt": "422",
+
+      "frgnr_netprps": "+556",       // 외국인  (억원)
+      "orgn_netprps":  "+3638",      // 기관계
+      "ind_netprps":   "-3377",      // 개인
+
+      "sc_netprps": "+2693",         // 증권
+      "insrnc_netprps": "-26", "invtrt_netprps": "-381", "bank_netprps": "-20",
+      "jnsinkm_netprps": "-22", "endw_netprps": "+1478",
+      "etc_corp_netprps": "-838", "samo_fund_netprps": "-85",
+      "native_trmt_frgnr_netprps": "+21", "natn_netprps": "+0"
+    }
+    // ... 업종 27개
+  ],
+  "return_code": 0
+}
+```
+
+⚠️ `flu_rt: "422"` — 다른 TR의 `flu_rt`(`"+11.61"` 같은 소수)와 **형식이 다릅니다.** `pred_pre/cur_prc`로 역산하면 4.05%가 나와 "422 = 4.22%"와도 정확히 맞지 않습니다. 이 필드는 그대로 쓰지 말고 **직접 계산**하거나 용도를 먼저 확인하세요.
+
+`orgn_netprps`(기관계)는 세부 기관(`sc_` 증권 / `insrnc_` 보험 / `bank_` 은행 / `endw_` 연기금 …)의 **합계**입니다. 둘을 더하면 이중 계상됩니다.
