@@ -23,6 +23,7 @@
 |---|---|---|
 | [`spec/`](spec/) | **키움 공식 스펙** — 338 TR JSON + PDF (저작권: 키움증권) | 전체 |
 | [`docs/PITFALLS.md`](docs/PITFALLS.md) | 함정 전체 목록 (실측 날짜 포함) | — |
+| [`docs/guide/`](docs/guide/) | 학습 시리즈 — Java 로 이 API 쓰는 법 (튜토리얼, 매주 일요일 1편) | — |
 | [`core/`](core/) | 인증·라우팅·Rate Limit·숫자 파싱 — **먼저 읽을 것** | OAuth2 (`/oauth2/token`) |
 | [`account/`](account/) | 계좌 조회 (잔고·예수금·평가·기간손익) | kt00018 · kt00001 · kt00004 · kt00017 · kt00016 · ka10076 · ka10077 |
 | [`order/`](order/) | 주문 발주·정정·취소·체결확인 | kt10000 · kt10001 · kt10002 · kt10003 · kt00007 · ka10075 |
