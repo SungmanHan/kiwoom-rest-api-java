@@ -5,6 +5,7 @@
 각 글은 이 저장소의 실제 코드(`core/`·`quote/`·`chart/`·`rank/`·`account/`·`order/` 등)만 근거로 작성되며, 문서에 없는 내용은 다루지 않습니다.
 
 <!-- INDEX:START -->
+1. [키움증권 REST API Java 연동 시작하기 — 앱키 발급부터 Access Token, 첫 API 호출까지](01-getting-started.md)
 <!-- INDEX:END -->
 
 발행되지 않은 편은 이 목록에 나타나지 않습니다.
