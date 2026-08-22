@@ -6,7 +6,7 @@
 
 - App Key / Secret이 무엇이고 어떻게 관리해야 하는지
 - `POST /oauth2/token`으로 Access Token을 발급받는 흐름
-- 모든 요청에 공통으로 붙는 `Authorization` 등 4개 헤더
+- 모든 요청에 공통으로 붙는 `Authorization` 등 5개 헤더
 - `ka10001`(주식기본정보) 같은 TR을 실제로 호출하는 방법
 - 첫 응답을 받았을 때 무엇을 확인해야 하는지, 그리고 흔한 실수 한 가지(토큰 로그에 body 찍기)
 
@@ -35,7 +35,7 @@
 │  1) ensureToken()      — 만료 임박 시 재발급   │
 │  2) resolveApiPath()   — TR_PATH_MAP 조회      │
 │  3) acquireRateSlot()  — 200ms 간격(초당 5회)  │
-│  4) executeRequest()   — POST + 헤더 4종       │
+│  4) executeRequest()   — POST + 헤더 5종       │
 └─────────────────────────────────────────────┘
         │
         ▼
@@ -131,7 +131,7 @@ private void ensureToken() {
 
 ## Authorization 헤더 구성
 
-토큰을 발급받았다면, 이후 모든 TR 요청에는 아래 4개 헤더가 공통으로 붙습니다.
+토큰을 발급받았다면, 이후 모든 TR 요청에는 아래 5개 헤더가 공통으로 붙습니다.
 
 ```
 api-id        : ka10001          ← TR 코드가 헤더로 들어간다 (body 아님)
