@@ -6,6 +6,7 @@
 
 <!-- INDEX:START -->
 1. [키움증권 REST API Java 연동 시작하기 — 앱키 발급부터 Access Token, 첫 API 호출까지](01-getting-started.md)
+2. [키움 REST API Java 연동 — TR 코드로 Endpoint를 찾는 라우팅 테이블 구조](02-tr-routing.md)
 <!-- INDEX:END -->
 
 발행되지 않은 편은 이 목록에 나타나지 않습니다.
