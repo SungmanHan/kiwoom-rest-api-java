@@ -11,6 +11,7 @@
 4. [키움 REST API Java 연동 — Rate Limit·토큰 갱신·점검 감지를 한 클래스에 모으기](04-api-client-layer.md)
 5. [키움 REST API Java 연동 5편 — 현재가·호가 조회부터 분봉·일봉·주봉·월봉까지](05-quote-and-chart.md)
 6. [키움 REST API Java 연동 6편 — KRX / NXT 거래소 구분 (stex_tp, _AL 접미사)](06-krx-nxt-exchange.md)
+7. [키움 REST API Java로 거래대금 순위·기관·외인 수급 조회하기 (ka10030, ka10044, ka10034)](07-rank-and-investor.md)
 <!-- INDEX:END -->
 
 발행되지 않은 편은 이 목록에 나타나지 않습니다.
