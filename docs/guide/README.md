@@ -13,6 +13,7 @@
 6. [키움 REST API Java 연동 6편 — KRX / NXT 거래소 구분 (stex_tp, _AL 접미사)](06-krx-nxt-exchange.md)
 7. [키움 REST API Java로 거래대금 순위·기관·외인 수급 조회하기 (ka10030, ka10044, ka10034)](07-rank-and-investor.md)
 8. [키움 REST API Java 계좌 조회 — 잔고·예수금·평가 현황 가져오기 (kt00018, kt00001, kt00004)](08-account.md)
+9. [키움 REST API 주문 발주·정정·취소 Java 구현 — 미체결 조회와 재시도 금지 규칙 (9/11)](09-order.md)
 <!-- INDEX:END -->
 
 발행되지 않은 편은 이 목록에 나타나지 않습니다.
